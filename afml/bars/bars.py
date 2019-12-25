@@ -19,9 +19,6 @@ def dollar_bar(dates, series, m):
     dollar_bar = dollar_bar.set_index('date')
     return dollar_bar.copy()
 
-def dollar_bar_df():
-
-    return True
 
 
 def dollar_bar_cum(df, m):

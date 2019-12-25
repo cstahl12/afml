@@ -3,41 +3,62 @@ import sys
 import time
 import random
 
-def get_price_data(symbols):
+def get_price_data(ticker, months = 24):
     ib = IB()
-    ib.connect('127.0.0.1', 2506, clientId=1576)
+    ib.connect('127.0.0.1', 4001, clientId=153)
 
-    for s in symbols:
-        print('Collecting price data for: ' + s)
-        contract = Stock(s, 'NYSE', 'USD')
+    dt = ''
+    barsList = []
+    bars = None
+    contract = Stock(ticker, 'BATS', 'USD')
+    i = 1
 
-        bars = ib.reqHistoricalData(
+    try:
+        while True:
+            bars = ib.reqHistoricalData(
                 contract,
-                endDateTime = '',
-                durationStr = '3 M',
-                barSizeSetting = '15 mins',
-                whatToShow = 'MIDPOINT',
-                useRTH = True,
-                formatDate = 1)
+                endDateTime=dt,
+                durationStr='1 M',
+                barSizeSetting='1 min',
+                whatToShow='TRADES',
+                useRTH=True,
+                formatDate=1)
 
-        df = util.df(bars)
-        df.to_csv('data/stocks/' + s + '.csv', index_label = False)
-        time.sleep(1)
+            if not bars:
+                break
+            if i >= months:
+                break
+            else:
+                i += 1
 
-    ib.disconnect()
+            barsList.append(bars)
+            dt = bars[0].date
+            print(dt)
 
-if __name__ == '__main__':
+    finally:
+        # save to CSV file
+        allBars = [b for bars in reversed(barsList) for b in bars]
+        df = util.df(allBars)
+        df.to_csv('data/stocks/' + ticker + '.csv', index_label = False)
 
-    default_symbols = ['V']
+        try:
+            ib.disconnect()
+        except:
+            pass
 
+def main():
+    default_symbol = 'AMD'
     n_symbols = len(sys.argv) - 1
-    symbols = None
+    symbol = None
 
     if(n_symbols == 0):
-        symbols = default_symbols
+        symbol = default_symbol
     else:
-        symbols = [s for s in sys.argv[-1:]]
+        symbol = sys.argv[-1]
 
-    get_price_data(symbols)
+    get_price_data(symbol)
 
     print("Complete...")
+
+if __name__ == '__main__':
+    main()
